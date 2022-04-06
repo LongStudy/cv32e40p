@@ -65,6 +65,7 @@ module cv32e40p_core
     output logic        data_we_o,
     output logic [ 3:0] data_be_o,
     output logic [31:0] data_addr_o,
+    
     output logic [31:0] data_wdata_o,
     input  logic [31:0] data_rdata_i,
 
@@ -94,10 +95,40 @@ module cv32e40p_core
 
     // CPU Control Signals
     input  logic fetch_enable_i,
-    output logic core_sleep_o
+    output logic core_sleep_o,
+    //test_tag_debug
+    output logic [31:0] mem_a1,
+    output logic [67:0] y0,y1,y2,y3,
+    output logic [1:0]  mac_flag,
+    output logic [31:0] con_cnt,
+    output logic [31:0] con_data[15:0]
+    //test_tag_debug
 );
 
   import cv32e40p_pkg::*;
+
+
+  //test_tag_mac
+  logic [MAC_OP_WIDTH-1:0]   mac_operator;
+  logic   mac_op_en;
+  logic [31:0] mac_op_result;
+  logic [31:0] mac_operand1;
+  logic [31:0] mac_operand2;
+  //test_tag_mac
+  //test_tag_con
+  logic		wb23_active;
+  logic		wb_finish;
+  logic [31:0]	mem_wdata;
+  logic 	wb23_flag;
+  logic 	con_active;
+  logic		w_wb_active;
+  //test_tag_con
+  //test_tag_mp
+  logic   mp_wb_active;
+  logic   mp_ri_active;
+  //test_tag_mp
+  //test_tag_reuse
+  logic   con_model;
 
   // Unused parameters and signals (left in code for future design extensions)
   localparam PULP_SECURE = 0;
@@ -530,6 +561,18 @@ module cv32e40p_core
 
       .scan_cg_en_i(scan_cg_en_i),
 
+      //test_tag_mac
+      .mac_operator_o				  ( mac_operator		 ),
+      .mac_op_en_o				  ( mac_op_en			 ),
+      .mac_operand_ex_o1			  ( mac_operand1		 ),
+      .mac_operand_ex_o2			  ( mac_operand2		 ),
+      //test_tag_mac
+      //test_tag_con
+      .con_active					  ( con_active			 ),
+      //test_tag_con
+      //test_tag_wb
+      .wb_finish					( wb_finish ),
+
       // Processor Enable
       .fetch_enable_i               ( fetch_enable         ),     // Delayed version so that clock can remain gated until fetch enabled
       .ctrl_busy_o(ctrl_busy),
@@ -751,6 +794,44 @@ module cv32e40p_core
       .clk  (clk),
       .rst_n(rst_ni),
 
+      //test_tag_mac
+      .mac_operator_i				( mac_operator				   ),
+      .mac_op_en_i				( mac_op_en					   ),
+      .mac_operand_i1				( mac_operand1				   ),
+      .mac_operand_i2				( mac_operand2				   ),
+      .mac_op_result				( mac_op_result				   ),
+      
+      //test_tag_mac
+      
+      //test_tag_con
+      .con_data_cnt				( con_cnt			),
+      .mem_rdata				( data_rdata_i			),
+      //.mem_wdata				( data_wdata_o 			),
+      .con_active				( con_active			),
+      .mac_flag              			( mac_flag			),
+      .con_data                   		( con_data			),
+      //test_tag_con
+      
+      //test_tag_wb
+      .wb23_active				( wb23_active			),
+      .mem_wdata				( mem_wdata			),
+      .wb_finish				( wb_finish			),
+      .w_wb_active				( w_wb_active			),
+      //test_tag_wb
+      //test_tag_mp
+      .mp_wb_active_o     ( mp_wb_active ),
+      .mp_ri_active_o     ( mp_ri_active ),
+      //test_tag_mp
+      //test_tag_debug
+      .y0                         ( y0 ),
+      .y1                         ( y1 ),
+      .y2                         ( y2 ),
+      .y3                         ( y3 ),
+      //test_tag_debug
+      //test_tag_reuse
+      .con_model                  ( con_model ),
+      //test_tag_reuse
+
       // Alu signals from ID stage
       .alu_en_i        (alu_en_ex),
       .alu_operator_i  (alu_operator_ex),  // from ID/EX pipe registers
@@ -913,7 +994,23 @@ module cv32e40p_core
       .lsu_ready_ex_o(lsu_ready_ex),
       .lsu_ready_wb_o(lsu_ready_wb),
 
-      .busy_o(lsu_busy)
+      .busy_o(lsu_busy),
+      //test_tag_con
+      .con_active			   ( con_active			),
+      .data_addr_con_start   	   ( mac_operand1		),
+      .con_max		   ( mac_operand2		),
+      .con_cnt		   ( con_cnt			),
+      .mac_flag	           ( mac_flag     	 	),
+      .wb23_active		   ( wb23_active		),
+      .mem_wdata		   ( mem_wdata			),
+      .w_wb_active	   ( w_wb_active		),
+      //test_tag_con
+      //test_tag_mp
+      .mp_wb_active    ( mp_wb_active   ),
+      .mp_ri_active    ( mp_ri_active   ),
+      //test_tag_mp
+      //test_tag_reuse
+      .con_model       ( con_model      )
   );
 
   // Tracer signal

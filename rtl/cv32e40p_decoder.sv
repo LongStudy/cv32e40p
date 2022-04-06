@@ -150,7 +150,20 @@ module cv32e40p_decoder import cv32e40p_pkg::*; import cv32e40p_apu_core_pkg::*;
   output logic [1:0]  ctrl_transfer_target_mux_sel_o,        // jump target selection
 
   // HPM related control signals
-  input  logic [31:0] mcounteren_i
+  input  logic [31:0] mcounteren_i,
+
+  //test_tag_mac
+  output logic [MAC_OP_WIDTH-1:0] mac_operator_o,
+  output logic mac_op_en_o,
+  //test_tag_mac
+  //test_tag_con
+  input  logic con_active,
+  input  logic clk,
+  input  logic rst_n,
+  //test_tag_con
+  //test_tag_wb
+  input  logic wb_finish
+
 );
 
   // write enable/request control
@@ -280,6 +293,11 @@ module cv32e40p_decoder import cv32e40p_pkg::*; import cv32e40p_apu_core_pkg::*;
     mret_dec_o                  = 1'b0;
     uret_dec_o                  = 1'b0;
     dret_dec_o                  = 1'b0;
+
+  	//test_tag_mac
+    mac_op_en_o                 = 1'b0;
+    mac_operator_o				= MAC_OP;
+    //test_tag_mac
 
     unique case (instr_rdata_i[6:0])
 
@@ -1388,6 +1406,86 @@ module cv32e40p_decoder import cv32e40p_pkg::*; import cv32e40p_apu_core_pkg::*;
           endcase
         end
       end
+  
+  
+  //test_tag_con
+	//test_tag_mac
+	OPCODE_MAC_OPS: begin
+		if (instr_rdata_i[14:12] == 3'b000 && instr_rdata_i[31:25] == 7'b0000_000) begin
+			mac_op_en_o = 1'b1;
+			mac_operator_o = MAC_OP;
+			rega_used_o = 1'b1;
+		end
+		else if(instr_rdata_i[14:12] == 3'b000 && instr_rdata_i[31:25] == 7'b0000_001) begin
+			mac_op_en_o = 1'b1;
+			mac_operator_o = CON_2X2_OP;
+			rega_used_o = 1'b1;
+			regb_used_o = 1'b1;
+		end
+		else if(instr_rdata_i[14:12] == 3'b001 && instr_rdata_i[31:25] == 7'b0000_000) begin
+			mac_op_en_o = 1'b1;
+			mac_operator_o = CON_OP;
+			rega_used_o = 1'b1;
+			regb_used_o = 1'b1;
+        data_req        = 1'b1;
+        regfile_mem_we  = 1'b1;
+        data_type_o     = 2'b00;
+        //instr_multicycle_o = 1'b1;
+        //data_we_o = 1'b0;
+        // offset from immediate
+        //alu_operator_o      = ALU_ADD;
+        //alu_op_b_mux_sel_o  = OP_B_IMM;
+        //imm_b_mux_sel_o     = IMMB_S;
+		alu_op_b_mux_sel_o = OP_B_REGB_OR_FWD;
+		// sign/zero extension
+        data_sign_extension_o = ~instr_rdata_i[14];
+		end
+		
+		else if(instr_rdata_i[14:12] == 3'b001 && instr_rdata_i[31:25] == 7'b0000_001) begin
+			mac_op_en_o = 1'b1;
+			mac_operator_o = WB23_OP;
+			rega_used_o = 1'b1;
+			regb_used_o = 1'b0;
+		      data_req       = 1'b1;
+		      data_we_o      = 1'b1;
+		      //instr_multicycle_o = 1'b1;
+		end
+		else if(instr_rdata_i[14:12] == 3'b010 && instr_rdata_i[31:25] == 7'b0000_000) begin
+			mac_op_en_o = 1'b1;
+			mac_operator_o = MAX_POOL_OP;
+		end
+		else if(instr_rdata_i[14:12] == 3'b011 && instr_rdata_i[31:25] == 7'b0000_000) begin
+			mac_op_en_o = 1'b1;
+			mac_operator_o = RELU_OP;
+		end
+		else if(instr_rdata_i[14:12] == 3'b100 && instr_rdata_i[31:25] == 7'b0000_000) begin
+			mac_op_en_o = 1'b1;
+			mac_operator_o = W_WB_OP;
+			rega_used_o = 1'b1;
+			regb_used_o = 1'b1;
+		end
+    else if(instr_rdata_i[14:12] == 3'b010 && instr_rdata_i[31:25] == 7'b0000_001) begin
+      mac_op_en_o = 1'b1;
+      mac_operator_o = MP_WB_OP;
+      rega_used_o = 1'b1;
+			regb_used_o = 1'b0;
+		      data_req       = 1'b1;
+		      data_we_o      = 1'b1;
+    end
+    else if(instr_rdata_i[14:12] == 3'b010 && instr_rdata_i[31:25] == 7'b0000_010) begin
+      mac_op_en_o = 1'b1;
+      mac_operator_o = MP_RI_OP;
+      rega_used_o = 1'b1;
+			regb_used_o = 1'b0;
+		      data_req       = 1'b1;
+		      data_we_o      = 1'b0;
+    end
+		else
+			illegal_insn_o = 1'b1;
+	end
+	//test_tag_mac
+	//test_tag_con
+
 
       ////////////////////////////
       //  ______ _____  _    _  //
@@ -2997,7 +3095,10 @@ module cv32e40p_decoder import cv32e40p_pkg::*; import cv32e40p_apu_core_pkg::*;
   assign mult_dot_en_o               = (deassert_we_i) ? 1'b0          : mult_dot_en;
   assign regfile_mem_we_o            = (deassert_we_i) ? 1'b0          : regfile_mem_we;
   assign regfile_alu_we_o            = (deassert_we_i) ? 1'b0          : regfile_alu_we;
-  assign data_req_o                  = (deassert_we_i) ? 1'b0          : data_req;
+  //ori assign data_req_o                  = (deassert_we_i) ? 1'b0          : data_req;
+  //test_tag_con
+  assign data_req_o        = ((deassert_we_i) ? 1'b0          : data_req)|con_active;
+  //test_tag_con
   assign hwlp_we_o                   = (deassert_we_i) ? 3'b0          : hwlp_we;
   assign csr_op_o                    = (deassert_we_i) ? CSR_OP_READ   : csr_op;
   assign ctrl_transfer_insn_in_id_o  = (deassert_we_i) ? BRANCH_NONE   : ctrl_transfer_insn;

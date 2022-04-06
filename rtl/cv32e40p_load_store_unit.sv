@@ -69,10 +69,40 @@ module cv32e40p_load_store_unit #(
     output logic lsu_ready_ex_o,  // LSU ready for new data in EX stage
     output logic lsu_ready_wb_o,  // LSU ready for new data in WB stage
 
-    output logic busy_o
+    output logic busy_o,
+    
+    //test_tag_con
+    input logic			 con_active,
+    input logic [31:0]	 data_addr_con_start,
+    input logic [31:0]	 con_max,
+    output logic [31:0]	 con_cnt,
+    input  logic [1:0]   mac_flag,
+    //test_tag_con
+
+    //test_tag_wb
+    input logic		wb23_active,
+    input logic		w_wb_active,
+    input logic [31:0]	mem_wdata,
+    //test_tag_wb
+
+    //test_tag_mp
+    input logic   mp_wb_active,
+    input logic   mp_ri_active,
+    //test_tag_mp
+    //test_tag_reuse
+    input logic con_model
+    //test_tag_reuse
 );
 
   localparam DEPTH = 2;  // Maximum number of outstanding transactions
+
+  //test_tag_con
+	logic [31:0]	data_addr_con;
+  logic [31:0]  data_addr_o_test;
+  logic [15:0]  max;
+  //test_tag_con
+	logic [31:0]	data_req_ex_i_d;
+	
 
   // Transaction request (to cv32e40p_obi_interface)
   logic trans_valid;
@@ -114,6 +144,12 @@ module cv32e40p_load_store_unit #(
   logic load_err_o, store_err_o;
 
   logic [31:0] rdata_q;
+
+  //test_tag_con
+  always_ff @(posedge clk)begin
+	  data_req_ex_i_d <= data_req_ex_i;
+  end
+  //test_tag_con
 
   ///////////////////////////////// BE generation ////////////////////////////////
   always_comb begin
@@ -169,16 +205,35 @@ module cv32e40p_load_store_unit #(
   // we handle misaligned accesses, half word and byte accesses and
   // register offsets here
   assign wdata_offset = data_addr_int[1:0] - data_reg_offset_ex_i[1:0];
-  always_comb begin
+  //ori
+  // always_comb begin
+  //   case (wdata_offset)
+  //     2'b00: data_wdata = data_wdata_ex_i[31:0];
+  //     2'b01: data_wdata = {data_wdata_ex_i[23:0], data_wdata_ex_i[31:24]};
+  //     2'b10: data_wdata = {data_wdata_ex_i[15:0], data_wdata_ex_i[31:16]};
+  //     2'b11: data_wdata = {data_wdata_ex_i[7:0], data_wdata_ex_i[31:8]};
+  //   endcase
+  //   ;  // case (wdata_offset)
+  // end
+  //ori
+  //test_tag_mp
+  //test_tag_wb
+  always_comb
+  begin
+  if(wb23_active|mp_wb_active)begin  
+    data_wdata = mem_wdata;
+    //$display("mp_lsu is ok,wb23 is%d, mp is%d,data_addr_con is %d,data_addr_o is %d, data_wdata_o=%d, data_we_o is%d, data_req_o is%d,data_be_o is%d",wb23_active,mp_wb_active,data_addr_con,data_addr_o,data_wdata_o,data_we_o,data_req_o,data_be_o);
+  end
+  else
     case (wdata_offset)
       2'b00: data_wdata = data_wdata_ex_i[31:0];
       2'b01: data_wdata = {data_wdata_ex_i[23:0], data_wdata_ex_i[31:24]};
       2'b10: data_wdata = {data_wdata_ex_i[15:0], data_wdata_ex_i[31:16]};
-      2'b11: data_wdata = {data_wdata_ex_i[7:0], data_wdata_ex_i[31:8]};
-    endcase
-    ;  // case (wdata_offset)
+      2'b11: data_wdata = {data_wdata_ex_i[ 7:0], data_wdata_ex_i[31: 8]};
+    endcase; // case (wdata_offset)
   end
-
+  //test_tag_wb
+  //test_tag_mp
 
   // FF for rdata alignment and sign-extension
   always_ff @(posedge clk, negedge rst_n) begin
@@ -315,6 +370,123 @@ module cv32e40p_load_store_unit #(
   // output to register file
   assign data_rdata_ex_o = (resp_valid == 1'b1) ? data_rdata_ext : rdata_q;
 
+  //test_tag_con
+  assign data_addr_o = (wb23_active|con_active|mp_wb_active|mp_ri_active)? data_addr_con: data_addr_o_test;
+
+  always_ff @(posedge  clk)
+  begin
+	  if (mac_flag == 2'b10)begin
+      if(con_model)begin
+        data_addr_con <= data_addr_con_start + 8;
+      end
+      else begin
+        data_addr_con <= data_addr_con_start;
+      end
+        max <= con_max[15:0];
+        con_cnt <= '0;
+	  end
+    else if(mac_flag == 2'b01)begin
+      data_addr_con <= data_addr_con_start;
+      con_cnt <= '0;
+    end
+	  else if(con_active)begin
+		  if(data_req_ex_i)begin
+        if(con_model==0)begin
+          if(con_cnt == max+1)begin
+              con_cnt <= '0;
+          end
+          else begin
+              data_addr_con <= data_addr_con + 4;	
+              con_cnt <= con_cnt + 1;
+          end
+        end
+        else if(con_model==1) begin
+          if(con_cnt == (max/2+1))begin
+            con_cnt <= '0;
+          end
+          else begin
+            if(con_cnt[0]==0)begin
+              data_addr_con <= data_addr_con + 4;
+            end
+            else if(con_cnt[0]==1)begin
+              data_addr_con <= data_addr_con + 12;
+            end
+            else begin
+              ;
+            end
+            con_cnt <= con_cnt + 1;
+          end
+        end
+		  end
+	  end
+    else if(wb23_active)begin
+		  if(data_req_ex_i)begin
+			case (con_cnt)
+        0:begin
+            data_addr_con <= data_addr_con + 4;
+            con_cnt <= con_cnt + 1;
+        end
+        1:begin
+            data_addr_con <= data_addr_con + 4;
+            con_cnt <= con_cnt + 1;
+        end
+        2:begin
+            data_addr_con <= data_addr_con + 4; 
+            con_cnt <= con_cnt + 1;
+        end
+        // 3:begin
+        //     data_addr_con <= data_addr_con + 4;
+        //     con_cnt <= con_cnt + 1;
+        // end
+        default:begin
+          con_cnt <= '1;
+          data_addr_con <= '0;
+        end 
+      endcase
+		  end
+	  end
+
+    else if(mp_ri_active)begin
+        if(data_req_ex_i)begin
+        case (con_cnt)
+          0:begin
+              data_addr_con <= data_addr_con + 4;
+              con_cnt <= con_cnt + 1;
+          end
+          1:begin
+              data_addr_con <= data_addr_con + 4;
+              con_cnt <= con_cnt + 1;
+          end
+          2:begin
+              data_addr_con <= data_addr_con + 4; 
+              con_cnt <= con_cnt + 1;
+          end
+          3:begin
+              data_addr_con <= data_addr_con + 4;
+              con_cnt <= con_cnt + 1;
+          end
+          default:begin
+            con_cnt <= '1;
+            data_addr_con <= '0;
+          end 
+        endcase
+        end
+      end
+
+    else begin
+      data_addr_con <= '0;
+    end
+  end
+  //test_tag_con
+  //test_tag_debug_display
+  always_comb
+  begin
+    if(data_req_o)begin
+      // $display("data_addr_con is %d, data_addr_o is %d, data_addr_o_test=%d, data_wdata_o=%d, data_we_o is%d",data_addr_con,data_addr_o,data_addr_o_test,data_wdata_o,data_we_o);
+    end  
+  end
+    
+  
   assign misaligned_st   = data_misaligned_ex_i;
 
   // Note: PMP is not fully supported at the moment (not even if USE_PMP = 1)
@@ -472,7 +644,10 @@ module cv32e40p_load_store_unit #(
 
       .obi_req_o   (data_req_o),
       .obi_gnt_i   (data_gnt_i),
-      .obi_addr_o  (data_addr_o),
+      //ori .obi_addr_o  (data_addr_o),
+      //test_tag_con
+      .obi_addr_o  (data_addr_o_test),
+      //test_tag_con
       .obi_we_o    (data_we_o),
       .obi_be_o    (data_be_o),
       .obi_wdata_o (data_wdata_o),
