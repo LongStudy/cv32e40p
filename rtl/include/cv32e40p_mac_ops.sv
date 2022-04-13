@@ -1,3 +1,18 @@
+// Copyright YELAB and Southern University of Science and Technology
+// ALL CODE ADDED BY YELAB IS THE PROPERTY OF YELAB, ALL RIGHTS RESERVED
+
+////////////////////////////////////////////////////////////////////////////////
+// Engineer:       											                  //
+//                                                                            //
+// Additional contributions by:                                               //
+//                                                                            //
+// Design Name:    Interrupt Controller                                       //
+// Description:    Interrupt Controller of the pipelined processor            //
+//                                                                            //
+////////////////////////////////////////////////////////////////////////////////
+
+
+
 import cv32e40p_pkg::*;
 //(*DONT_TOUCH = "TURE"*) 
 module cv32e40p_mac_ops

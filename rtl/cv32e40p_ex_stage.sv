@@ -29,6 +29,14 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
+// test tag list
+// test_tag_mac
+// test_tag_con
+// test_tag_wb
+// test_tag_mp
+// test_tag_debug
+// test_tag_reuse
+
 module cv32e40p_ex_stage
   import cv32e40p_pkg::*;
   import cv32e40p_apu_core_pkg::*;
@@ -79,36 +87,41 @@ module cv32e40p_ex_stage
     // FPU signals
     output logic fpu_fflags_we_o,
 
-    //test_tag_mac
+    // test_tag_mac
     input logic mac_op_en_i,
     input logic [MAC_OP_WIDTH-1:0]mac_operator_i,
     input logic [31:0]	mac_operand_i1,
     input logic [31:0]	mac_operand_i2,
     output logic [31:0]	mac_op_result,
-    //test_tag_mac
-    //test_tag_con
+    // test_tag_mac
+
+    // test_tag_con
     input logic [31:0]	con_data_cnt,
     input logic [31:0]	mem_rdata,
     output logic			con_active,
     output logic [1:0]  mac_flag,
-    //test_tag_con
-    //test_tag_wb
+    // test_tag_con
+
+    // test_tag_wb
     output logic 		wb23_active,
     output logic		w_wb_active,
     output logic		wb_finish,
     output logic [31:0]	mem_wdata,
-    //test_tag_wb
-    //test_tag_mp
+    // test_tag_wb
+
+    // test_tag_mp
     output logic    mp_wb_active_o,
     output logic    mp_ri_active_o,
-    //test_tag_mp
-    //test_tag_debug
+    // test_tag_mp
+
+    // test_tag_debug
     output logic [67:0] y0,y1,y2,y3,
     output logic [31:0] con_data [15:0],
-    //test_tag_debug
-    //test_tag_reuse
-    output logic con_model,
+    // test_tag_debug
 
+    // test_tag_reuse
+    output logic con_model,
+    // test_tag_reuse
 
     // APU signals
     input logic                              apu_en_i,
@@ -183,9 +196,9 @@ module cv32e40p_ex_stage
     input  logic wb_ready_i  // WB stage ready for new data
 );
 
-  //test_tag_mac
+  // test_tag_mac
   logic mac_op_ready;
-  //test_tag_mac
+  // test_tag_mac
 
   logic [31:0] alu_result;
   logic [31:0] mult_result;
@@ -233,11 +246,9 @@ module cv32e40p_ex_stage
       if (alu_en_i) regfile_alu_wdata_fw_o = alu_result;
       if (mult_en_i) regfile_alu_wdata_fw_o = mult_result;
       if (csr_access_i) regfile_alu_wdata_fw_o = csr_rdata_i;
-    //test_tag_mac
-	  if (mac_op_en_i)
-		regfile_alu_wdata_fw_o = mac_op_result;
-	  //test_tag_mac
-    
+    // test_tag_mac
+	  if (mac_op_en_i) regfile_alu_wdata_fw_o = mac_op_result;
+	  // test_tag_mac
     end
   end
 
@@ -265,8 +276,8 @@ module cv32e40p_ex_stage
   assign branch_decision_o = alu_cmp_result;
   assign jump_target_o     = alu_operand_c_i;
 
-  //test_tag_mac
-  //test_tag_con 
+  // test_tag_mac
+  // test_tag_con 
   
   cv32e40p_mac_ops cv32e40p_mac_ops_i
   (
@@ -298,8 +309,8 @@ module cv32e40p_ex_stage
   .con_data     (con_data)
   );
 
-  //test_tag_con
-  //test_tag_mac
+  // test_tag_con
+  // test_tag_mac
 
   ////////////////////////////
   //     _    _    _   _    //
@@ -484,14 +495,17 @@ module cv32e40p_ex_stage
   // As valid always goes to the right and ready to the left, and we are able
   // to finish branches without going to the WB stage, ex_valid does not
   // depend on ex_ready.
+  
   //ori
   //assign ex_ready_o = (~apu_stall & alu_ready & mult_ready & lsu_ready_ex_i
   //                     & wb_ready_i & ~wb_contention) | (branch_in_ex_i);
   //ori
-  assign ex_valid_o = (apu_valid | alu_en_i | mult_en_i | csr_access_i | lsu_en_i)
-                       & (alu_ready & mult_ready & lsu_ready_ex_i & wb_ready_i);
-  //test_tag_mac
+
+  // test_tag_mac
   assign ex_ready_o = (~apu_stall & alu_ready & mult_ready & lsu_ready_ex_i
                        & wb_ready_i & ~wb_contention & mac_op_ready) | (branch_in_ex_i);
-  //test_tag_mac
+  // test_tag_mac
+
+  assign ex_valid_o = (apu_valid | alu_en_i | mult_en_i | csr_access_i | lsu_en_i)
+                       & (alu_ready & mult_ready & lsu_ready_ex_i & wb_ready_i);
 endmodule

@@ -27,6 +27,12 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
+// test tag list
+// test_tag_mac
+// test_tag_con
+// test_tag_wb
+
+
 module cv32e40p_id_stage
   import cv32e40p_pkg::*;
   import cv32e40p_apu_core_pkg::*;
@@ -108,18 +114,20 @@ module cv32e40p_id_stage
     output logic [5:0] regfile_alu_waddr_ex_o,
     output logic       regfile_alu_we_ex_o,
 
-    //test_tag_mac
+    // test_tag_mac
     output logic [MAC_OP_WIDTH-1:0] mac_operator_o,
     output logic mac_op_en_o,
     output logic [31:0] mac_operand_ex_o1,
     output logic [31:0] mac_operand_ex_o2,
-    //test_tag_mac
-    //test_tag_con
+    // test_tag_mac
+
+    // test_tag_con
     input  logic con_active,
-    //test_tag_con
-    //test_tag_wb
+    // test_tag_con
+
+    // test_tag_wb
     input logic wb_finish,
-    
+    // test_tag_wb
 
     // ALU
     output logic              alu_en_ex_o,
@@ -264,12 +272,12 @@ module cv32e40p_id_stage
     input logic [31:0] mcounteren_i
 );
 
-  //test_tag_mac
+  // test_tag_mac
   logic [MAC_OP_WIDTH-1:0] mac_operator;
   logic mac_op_en;
   assign mac_operator_o = mac_operator;
   assign mac_op_en_o = mac_op_en;
-  //test_tag_mac
+  // test_tag_mac
 
 
   // Source/Destination register instruction index
@@ -968,7 +976,7 @@ module cv32e40p_id_stage
   //                                           //
   ///////////////////////////////////////////////
 
-  //test_tag_mac
+  // test_tag_mac
   always_comb 
   begin
 	  if (mac_op_en) begin
@@ -976,7 +984,7 @@ module cv32e40p_id_stage
 		  mac_operand_ex_o2 = alu_operand_b;
 	  end
   end
-  //test_tag_mac
+  // test_tag_mac
   
   cv32e40p_decoder #(
       .PULP_XPULP      (PULP_XPULP),
@@ -989,17 +997,20 @@ module cv32e40p_id_stage
       .DEBUG_TRIGGER_EN(DEBUG_TRIGGER_EN)
   ) decoder_i (
 
-      //test_tag_mac
+      // test_tag_mac
       .mac_operator_o					 ( mac_operator				 ),
       .mac_op_en_o					   ( mac_op_en				 ),
-      //test_tag_mac
-      //test_tag_con
+      // test_tag_mac
+
+      // test_tag_con
       .clk							       ( clk						 ),
       .rst_n							     ( rst_n					 ),
       .con_active						   ( con_active				 ),
-      //test_tag_con
-      //test_tag_wb
+      // test_tag_con
+
+      // test_tag_wb
       .wb_finish						   ( wb_finish 	),
+      // test_tag_wb
 
       // controller related signals
       .deassert_we_i(deassert_we),
@@ -1138,9 +1149,9 @@ module cv32e40p_id_stage
       .is_decoding_o    (is_decoding_o),
       .is_fetch_failed_i(is_fetch_failed_i),
 
-      //test_tag_wb
+      // test_tag_wb
       .wb_finish			    ( wb_finish		     ),
-      //test_tag_wb
+      // test_tag_wb
 
       // decoder related signals
       .deassert_we_o(deassert_we),
@@ -1628,15 +1639,15 @@ module cv32e40p_id_stage
 
         csr_op_ex_o          <= CSR_OP_READ;
 
+        // test_tag_con
         //ori data_req_ex_o        <= 1'b0;
-        //test_tag_con
         if(con_active==1'b1)begin
           data_req_ex_o			<= 1'b1;
         end
         else begin
           data_req_ex_o			<= 1'b0;
         end
-        //test_tag_con
+        // test_tag_con
         
         data_load_event_ex_o <= 1'b0;
 

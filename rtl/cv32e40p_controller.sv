@@ -28,6 +28,9 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
+// test tag list
+// test_tag_wb
+
 module cv32e40p_controller import cv32e40p_pkg::*;
 #(
   parameter PULP_CLUSTER = 0,
@@ -43,9 +46,9 @@ module cv32e40p_controller import cv32e40p_pkg::*;
   output logic        is_decoding_o,              // Core is in decoding state
   input  logic        is_fetch_failed_i,
 
-  //test_tag_wb
-  input logic	      wb_finish,
-  //test_tag_wb
+  // begin test_tag_wb
+  input logic	        wb_finish,
+  // end test_tag_wb
 
   // decoder related signals
   output logic        deassert_we_o,              // deassert write enable for next instruction
@@ -1313,10 +1316,11 @@ endgenerate
   begin
     load_stall_o   = 1'b0;
     deassert_we_o  = 1'b0;
-    //test_tag_wb
+
+    // begin test_tag_wb
     if (wb_finish)
 	    deassert_we_o = 1'b1;
-    //test_tag_wb
+    // end test_tag_wb
     
     // deassert WE when the core is not decoding instructions
     if (~is_decoding_o)

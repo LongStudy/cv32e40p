@@ -23,6 +23,13 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
+// test tag list
+// test_tag_con
+// test_tag_wb
+// test_tag_mp
+// test_tag_reuse
+// test_tag_debug_display
+
 module cv32e40p_load_store_unit #(
     parameter PULP_OBI = 0  // Legacy PULP OBI behavior
 ) (
@@ -69,40 +76,41 @@ module cv32e40p_load_store_unit #(
     output logic lsu_ready_ex_o,  // LSU ready for new data in EX stage
     output logic lsu_ready_wb_o,  // LSU ready for new data in WB stage
 
-    output logic busy_o,
-    
-    //test_tag_con
+    // test_tag_con
     input logic			 con_active,
     input logic [31:0]	 data_addr_con_start,
     input logic [31:0]	 con_max,
     output logic [31:0]	 con_cnt,
     input  logic [1:0]   mac_flag,
-    //test_tag_con
+    // test_tag_con
 
-    //test_tag_wb
+    // test_tag_wb
     input logic		wb23_active,
     input logic		w_wb_active,
     input logic [31:0]	mem_wdata,
-    //test_tag_wb
+    // test_tag_wb
 
-    //test_tag_mp
+    // test_tag_mp
     input logic   mp_wb_active,
     input logic   mp_ri_active,
-    //test_tag_mp
-    //test_tag_reuse
-    input logic con_model
-    //test_tag_reuse
+    // test_tag_mp
+
+    // test_tag_reuse
+    input logic con_model,
+    // test_tag_reuse
+
+    output logic busy_o
+
 );
 
   localparam DEPTH = 2;  // Maximum number of outstanding transactions
 
-  //test_tag_con
+  // test_tag_con
 	logic [31:0]	data_addr_con;
   logic [31:0]  data_addr_o_test;
   logic [15:0]  max;
-  //test_tag_con
 	logic [31:0]	data_req_ex_i_d;
-	
+  // test_tag_con
 
   // Transaction request (to cv32e40p_obi_interface)
   logic trans_valid;
@@ -145,11 +153,11 @@ module cv32e40p_load_store_unit #(
 
   logic [31:0] rdata_q;
 
-  //test_tag_con
+  // test_tag_con
   always_ff @(posedge clk)begin
 	  data_req_ex_i_d <= data_req_ex_i;
   end
-  //test_tag_con
+  // test_tag_con
 
   ///////////////////////////////// BE generation ////////////////////////////////
   always_comb begin
@@ -205,6 +213,9 @@ module cv32e40p_load_store_unit #(
   // we handle misaligned accesses, half word and byte accesses and
   // register offsets here
   assign wdata_offset = data_addr_int[1:0] - data_reg_offset_ex_i[1:0];
+
+  // test_tag_mp
+  // test_tag_wb
   //ori
   // always_comb begin
   //   case (wdata_offset)
@@ -216,8 +227,6 @@ module cv32e40p_load_store_unit #(
   //   ;  // case (wdata_offset)
   // end
   //ori
-  //test_tag_mp
-  //test_tag_wb
   always_comb
   begin
   if(wb23_active|mp_wb_active)begin  
@@ -232,8 +241,8 @@ module cv32e40p_load_store_unit #(
       2'b11: data_wdata = {data_wdata_ex_i[ 7:0], data_wdata_ex_i[31: 8]};
     endcase; // case (wdata_offset)
   end
-  //test_tag_wb
-  //test_tag_mp
+  // test_tag_wb
+  // test_tag_mp
 
   // FF for rdata alignment and sign-extension
   always_ff @(posedge clk, negedge rst_n) begin
@@ -370,7 +379,7 @@ module cv32e40p_load_store_unit #(
   // output to register file
   assign data_rdata_ex_o = (resp_valid == 1'b1) ? data_rdata_ext : rdata_q;
 
-  //test_tag_con
+  // test_tag_con
   assign data_addr_o = (wb23_active|con_active|mp_wb_active|mp_ri_active)? data_addr_con: data_addr_o_test;
 
   always_ff @(posedge  clk)
@@ -477,15 +486,16 @@ module cv32e40p_load_store_unit #(
       data_addr_con <= '0;
     end
   end
-  //test_tag_con
-  //test_tag_debug_display
+  // test_tag_con
+
+  // test_tag_debug_display
   always_comb
   begin
     if(data_req_o)begin
       // $display("data_addr_con is %d, data_addr_o is %d, data_addr_o_test=%d, data_wdata_o=%d, data_we_o is%d",data_addr_con,data_addr_o,data_addr_o_test,data_wdata_o,data_we_o);
     end  
   end
-    
+  // test_tag_debug_display
   
   assign misaligned_st   = data_misaligned_ex_i;
 
@@ -644,10 +654,12 @@ module cv32e40p_load_store_unit #(
 
       .obi_req_o   (data_req_o),
       .obi_gnt_i   (data_gnt_i),
+      
+      // test_tag_con
       //ori .obi_addr_o  (data_addr_o),
-      //test_tag_con
       .obi_addr_o  (data_addr_o_test),
-      //test_tag_con
+      // test_tag_con
+
       .obi_we_o    (data_we_o),
       .obi_be_o    (data_be_o),
       .obi_wdata_o (data_wdata_o),

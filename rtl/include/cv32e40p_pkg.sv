@@ -23,6 +23,13 @@
 //                                                                            //
 ////////////////////////////////////////////////////////////////////////////////
 
+
+// test tag list
+// test_tag_mac
+// test_tag_con
+// test_tag_wb
+// test_tag_mp
+
 package cv32e40p_pkg;
 
   ////////////////////////////////////////////////
@@ -54,24 +61,29 @@ package cv32e40p_pkg;
   parameter OPCODE_LOAD_FP = 7'h07;
   parameter OPCODE_AMO = 7'h2F;
 
-  //test_tag_con
-  //test_tag_mac
-  parameter OPCODE_MAC_OPS   = 7'h77;
 
-  parameter MAC_OP_WIDTH = 4;
-  parameter MAC_OP = 4'b0000;
-  parameter CON_2X2_OP = 4'b0001;
-  parameter CON_OP = 4'b0010;
-  //test_tag_mac
-  //test_tag_con
-  //test_tag_wb
-  parameter WB23_OP = 4'b0011;
-  parameter MAX_POOL_OP = 4'b0100;
-  parameter RELU_OP = 4'b0101;
-  parameter W_WB_OP = 4'b0110;
-  //test_tag_mp
-  parameter MP_WB_OP = 4'b0111;
-  parameter MP_RI_OP = 4'b1000;
+  // test_tag_mac
+  parameter OPCODE_MAC_OPS   = 7'h77; // need to add
+  parameter MAC_OP_WIDTH = 4;       // need to add
+  parameter MAC_OP = 4'b0000;       // need to add
+  // test_tag_mac
+
+  // test_tag_con
+  parameter CON_2X2_OP = 4'b0001;       // need to add
+  parameter CON_OP = 4'b0010;       // need to add
+  // test_tag_con
+
+  // test_tag_wb
+  parameter WB23_OP = 4'b0011;       // need to add
+  parameter MAX_POOL_OP = 4'b0100;       // need to add
+  parameter RELU_OP = 4'b0101;       // need to add
+  parameter W_WB_OP = 4'b0110;       // need to add
+  // test_tag_wb
+
+  // test_tag_mp
+  parameter MP_WB_OP = 4'b0111;       // need to add
+  parameter MP_RI_OP = 4'b1000;       // need to add
+  // test_tag_mp
 
   // those opcodes are now used for PULP custom instructions
   // parameter OPCODE_CUST0     = 7'h0b
